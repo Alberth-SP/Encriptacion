@@ -1,0 +1,306 @@
+<html>
+<head>
+	
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+
+<!-- jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+<!-- Latest compiled JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+<style type="text/css">
+		body{
+			margin: 40px 80px;
+			background: #f0f0f0;
+
+			}	
+		._divtab{
+
+			margin:5px 20px 5px 250px;
+			width: 100%;  
+
+			}
+
+
+		table{
+			table-layout: auto;
+ 			 width: 100%;  
+
+				
+				margin: 20px 40px 0px 40px;
+				border-collapse: collapse;
+		}
+		table, th, td{
+				border: 2px solid #cdcdcd;
+				width: 250 !important;
+				height: 50px !important;
+				font-weight: bold;
+		}
+		table th, table td{
+				padding: 5px;
+				width: 250 !important;
+				height: 50px !important;
+				text-align: left;
+
+				font-weight: bold;
+				
+
+
+		
+
+		}
+		td{
+			width: 250 !important;
+				height: 50px !important;
+
+			}
+		.celda{
+			width: 250 !important;
+			height: 50px !important;
+
+		}
+
+		.celda1{
+			width: 250 !important;
+			height: 50px !important;
+
+		}
+
+		.celda2{
+			background: #3c3c3c;
+			width: 250 !important;
+			height: 50px !important;
+
+		}
+
+		textarea {
+	width: 300px;
+	height: 100px;
+}
+
+</style>
+<script >
+	var KEY = null;
+	var TABLE = null;
+	var SIZE = null;
+
+	function myFunction(){
+		var _size =  $('#input_number').val();
+		if( _size < 0){
+			alert("INGRESE UN NUMERO MAYOR A 0");
+			return;
+		}
+
+		var file = document.getElementById("files").files[0];
+		var reader = new FileReader();
+		reader.onload = function (e) {
+				var textArea = document.getElementById("message");
+				textArea.value = e.target.result;							
+		};
+		
+		reader.readAsText(file);	
+		
+	}
+
+
+	function encriptar(){
+		myFunction();
+
+		_message = $('#message').val();  
+		_size = $('#input_number').val();		
+
+		if (_message.length<=0 || _size<=0 ){
+			alert("INGRESE TAMAÑO DE REJILLA Y/O ARCHIVO!");
+			return
+		}
+
+		var dict = null;
+		var rotations = null;
+		$.ajax({
+			url: "{% url 'cifrado:cipher'  %}",     
+			data: {
+					'message': _message,
+					'size': _size,  
+			},
+			type: 'GET',
+			success: function(data) {
+
+				 $('table').remove();
+				 $('h3').remove();
+
+					dict = JSON.parse(data);
+					displayTable(dict['cipher'],_size,"here_table" );
+					tabs = dict['tabs'];
+					rotations = dict['rotations'];
+					console.log(tabs);
+					console.log(rotations);
+					KEY = rotations['rotate0'];
+					TABLE = dict['cipher'];
+					SIZE = _size;
+					displayTableWithKey(tabs['rotate0'], _size, rotations['rotate0'] , "rotate0");
+					displayTableWithKey(tabs['rotate1'],  _size, rotations['rotate1'] , "rotate1");
+					displayTableWithKey(tabs['rotate2'],  _size, rotations['rotate2'] , "rotate2");
+					displayTableWithKey(tabs['rotate3'],  _size, rotations['rotate3'] , "rotate3");  
+
+					$('#message').val(dict['preproc']);
+			},
+			failure: function(data) { 
+					alert('Got an error dude');
+			}
+		}); 
+	}
+
+
+
+	function displayTableWithKey(_pts,_size,_key,_elem){
+			 
+		var content = "<h3 style='font-weight:bold;'> "+ "Rotacion"+ _elem.substr(6,1) +"</h3>";
+		content += "<table class='table table-condensed table-hover table-striped'>";
+		for(i=0; i<_size; i++){
+			content += '<tr>';
+			for(j=0; j<_size; j++){
+				var _k = i.toString()+"-"+j.toString(); 
+				if (_k in _key){
+					content += "<td class='celda1'>" +  _pts[i][j]+ "</td>";
+				}
+				else{
+					content += "<td class='celda2'>" +  "__"+ "</td>";
+				}					
+			}
+			content += '</tr>';
+		}
+
+		content += "</table>";
+		$('#'+_elem).append(content);
+	}		
+
+	function displayTable(_pts,_size,_elem){
+
+		var content = "<h3 style='font-weight:bold;' > ENCRIPTADO </h3> ";
+			 
+		content += "<table >";
+		for(i=0; i<_size; i++){
+			content += '<tr>';
+			for(j=0; j<_size; j++){
+				content += "<td class='celda'>" +  _pts[i][j]+ "</td>";
+			}
+			content += '</tr>';
+		}
+
+		content += "</table>";
+		$('#'+_elem).append(content);
+	}
+
+	function displayTableDes(_pts,_size,_elem){
+
+		var content = "<h3 style='font-weight:bold;'> "+ "Rotacion"+ _elem.substr(6,1) +"</h3>";
+		content += "<table class='table table-condensed table-hover table-striped'>";
+			 
+		content += "<table >";
+		for(i=0; i<_size; i++){
+			content += '<tr>';
+			for(j=0; j<_size; j++){
+				if (_pts[i][j].length == 0){
+					content += "<td class='celda2'>" + "__" + "</td>";
+				}
+				else{
+					content += "<td class='celda'>" +  _pts[i][j]+ "</td>";
+				}
+			}
+			content += '</tr>';
+		}
+
+		content += "</table>";
+		$('#'+_elem).append(content);
+	}
+
+	function desencriptar(){
+		$.ajax({
+			url: "{% url 'cifrado:descipher'  %}",     
+			data: {
+					'key': JSON.stringify(KEY),
+					'table': JSON.stringify(TABLE),
+					'size': SIZE,  
+			},
+			type: 'GET',
+			success: function(data) {
+				$('table').remove();
+				$('h3').remove();
+				dict = JSON.parse(data);
+				displayTable(TABLE,SIZE,"here_table" );				
+				tabs = dict['tabs'];
+
+				displayTableDes(tabs['rotate0'],SIZE,"rotate0" );
+				displayTableDes(tabs['rotate1'],SIZE,"rotate1" );			
+				displayTableDes(tabs['rotate2'],SIZE,"rotate2" );
+				displayTableDes(tabs['rotate3'],SIZE,"rotate3" );
+				  
+
+				$('#message2').val(dict['descipher']);
+				
+			},
+			failure: function(data) { 
+					alert('Got an error dude');
+			}
+		}); 
+	}	
+
+
+</script>
+</head>
+	<body>
+		<div style="width:100%;">
+
+			<h1 style="text-align:center;font-weight:bold;" > ALGORITMO POR REJILLAS</h1>
+			<div style="margin: 50px 0px 0px 0px;">
+				<span>
+				<label> Tamaño de Rejilla: </label>
+				<input  style="margin: 0px 5px;" type="number" id="input_number" />
+				<button type="button" class="btn btn-primary"  id="btn" onclick="myFunction()" >Cargar File</button>
+				<button type="button" class="btn btn-success"  id="btn_enc" onclick="encriptar()" >Encriptar</button>    
+				<button type="button" class="btn btn-info"  id="btn_des" onclick="desencriptar()" >Desencriptar</button>
+				</span>
+			</div>
+			<br>
+
+			<div >
+				<div>
+					<input type="file" id="files"/>	
+				</div>
+				<div style="float:left;" >	
+					<label> Mensaje a Encriptar: </label><br>
+					<textarea readonly id="message"> </textarea> <br>
+				</div>
+				<div style="margin:0px 0px 0px 20px;">	
+					<label> Mensaje Desencriptado: </label><br>
+					<textarea readonly id="message2"> </textarea> <br>
+				</div>
+				
+				<br>
+			</div>
+	
+		</div>
+
+		<div  class="_divtab"  id="here_table">
+		</div>
+
+		<div class="_divtab"   id="rotate0">
+		</div>
+
+		<div   class="_divtab" id="rotate1">
+		</div>
+
+		<div   class="_divtab"  id="rotate2">
+
+		</div>
+
+		<div  class="_divtab"  id="rotate3">
+		</div>	
+
+
+	</body>
+
+
+</html>
