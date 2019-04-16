@@ -1,0 +1,33 @@
+--------------
+Requerimientos
+--------------
+python 3.7
+
+
+pip 9.0.3 o >
+
+------------
+INSTALACION
+------------
+
+python3 -m pip install --upgrade pip
+- clonar la rama:
+git clone https://github.com/Alberth-SP/Encriptacion.git
+
+-crear entorno virtual y activar entorno con:
+python -m venv myvenv
+project/myvenv/Script/activate
+
+-Instalar Django
+pip install -r requirements.txt
+
+- Migrar modelos y crear superuser
+python manage.py migrate
+python manage.py createsuperuser
+
+- Ejecutar Server
+python manage.py runserver
+
+- Pagina de inicio 
+http://127.0.0.1:8000
+
