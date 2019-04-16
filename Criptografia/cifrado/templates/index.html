@@ -131,20 +131,26 @@
 				 $('h3').remove();
 
 					dict = JSON.parse(data);
-					displayTable(dict['cipher'],_size,"here_table" );
-					tabs = dict['tabs'];
-					rotations = dict['rotations'];
-					console.log(tabs);
-					console.log(rotations);
-					KEY = rotations['rotate0'];
-					TABLE = dict['cipher'];
+				   table = dict['table'];
+				   keys =  dict['keys']; 
+				   ciphers = dict['ciphers'];
+				   cipher = dict['cipher']; 
+
+					displayTable(table, _size, "here_table" );
+					
+					KEY = keys['rotate0'];
+					TABLE = dict['table'];
 					SIZE = _size;
-					displayTableWithKey(tabs['rotate0'], _size, rotations['rotate0'] , "rotate0");
-					displayTableWithKey(tabs['rotate1'],  _size, rotations['rotate1'] , "rotate1");
-					displayTableWithKey(tabs['rotate2'],  _size, rotations['rotate2'] , "rotate2");
-					displayTableWithKey(tabs['rotate3'],  _size, rotations['rotate3'] , "rotate3");  
+
+					displayTableWithKey(table, _size, keys['rotate0'] , "rotate0");
+					displayTableWithKey(table, _size, keys['rotate1'] , "rotate1");
+					displayTableWithKey(table, _size, keys['rotate2'] , "rotate2");
+					displayTableWithKey(table, _size, keys['rotate3'] , "rotate3");
+
+					 
 
 					$('#message').val(dict['preproc']);
+					$('#message2').val(cipher);
 			},
 			failure: function(data) { 
 					alert('Got an error dude');
@@ -154,7 +160,7 @@
 
 
 
-	function displayTableWithKey(_pts,_size,_key,_elem){
+	function displayTableWithKey(_table,_size,_key,_elem){
 			 
 		var content = "<h3 style='font-weight:bold;'> "+ "Rotacion"+ _elem.substr(6,1) +"</h3>";
 		content += "<table class='table table-condensed table-hover table-striped'>";
@@ -163,7 +169,7 @@
 			for(j=0; j<_size; j++){
 				var _k = i.toString()+"-"+j.toString(); 
 				if (_k in _key){
-					content += "<td class='celda1'>" +  _pts[i][j]+ "</td>";
+					content += "<td class='celda1'>" +  _table[i][j]+ "</td>";
 				}
 				else{
 					content += "<td class='celda2'>" +  "__"+ "</td>";
@@ -176,7 +182,7 @@
 		$('#'+_elem).append(content);
 	}		
 
-	function displayTable(_pts,_size,_elem){
+	function displayTable(_table,_size,_elem){
 
 		var content = "<h3 style='font-weight:bold;' > ENCRIPTADO </h3> ";
 			 
@@ -184,7 +190,7 @@
 		for(i=0; i<_size; i++){
 			content += '<tr>';
 			for(j=0; j<_size; j++){
-				content += "<td class='celda'>" +  _pts[i][j]+ "</td>";
+				content += "<td class='celda'>" +  _table[i][j]+ "</td>";
 			}
 			content += '</tr>';
 		}
@@ -193,20 +199,23 @@
 		$('#'+_elem).append(content);
 	}
 
-	function displayTableDes(_pts,_size,_elem){
+	function displayTableDes(_message, _size, _elem, _key){
 
 		var content = "<h3 style='font-weight:bold;'> "+ "Rotacion"+ _elem.substr(6,1) +"</h3>";
 		content += "<table class='table table-condensed table-hover table-striped'>";
 			 
 		content += "<table >";
+		var index = 0;
 		for(i=0; i<_size; i++){
 			content += '<tr>';
 			for(j=0; j<_size; j++){
-				if (_pts[i][j].length == 0){
-					content += "<td class='celda2'>" + "__" + "</td>";
+				var _k = i.toString()+"-"+j.toString(); 
+				if ((_k in _key) && (index < _message.length)){
+					content += "<td class='celda1'>" +  _message[index]+ "</td>";
+					index += 1;
 				}
 				else{
-					content += "<td class='celda'>" +  _pts[i][j]+ "</td>";
+					content += "<td class='celda2'>" +  "__"+ "</td>";
 				}
 			}
 			content += '</tr>';
@@ -229,16 +238,24 @@
 				$('table').remove();
 				$('h3').remove();
 				dict = JSON.parse(data);
-				displayTable(TABLE,SIZE,"here_table" );				
+
+								
 				tabs = dict['tabs'];
 
-				displayTableDes(tabs['rotate0'],SIZE,"rotate0" );
-				displayTableDes(tabs['rotate1'],SIZE,"rotate1" );			
-				displayTableDes(tabs['rotate2'],SIZE,"rotate2" );
-				displayTableDes(tabs['rotate3'],SIZE,"rotate3" );
-				  
+				message = dict['message'];
+			   table = dict['table'] ;
+			   keys = dict['keys'];
+			   desciphers = dict['desciphers'];
+			   descipher = dict['descipher'];
+			   displayTable(table,SIZE,"here_table" );
 
-				$('#message2').val(dict['descipher']);
+				displayTableDes(desciphers['rotate0'], SIZE, "rotate0", keys['rotate0']);
+				displayTableDes(desciphers['rotate1'], SIZE, "rotate1", keys['rotate1']);			
+				displayTableDes(desciphers['rotate2'], SIZE, "rotate2", keys['rotate2']);
+				displayTableDes(desciphers['rotate3'], SIZE, "rotate3", keys['rotate3']);				  
+
+				$('#message2').val("");
+				$('#message2').val(descipher);
 				
 			},
 			failure: function(data) { 
