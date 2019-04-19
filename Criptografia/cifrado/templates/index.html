@@ -85,36 +85,50 @@
 	var KEY = null;
 	var TABLE = null;
 	var SIZE = null;
+	$('#message').val(""); 
+	$('#key').val("");
+
 
 	function myFunction(){
-		var _size =  $('#input_number').val();
-		if( _size < 0){
-			alert("INGRESE UN NUMERO MAYOR A 0");
-			return;
-		}
-
-		var file = document.getElementById("files").files[0];
+		
+		var file1 = document.getElementById("files1").files[0];
 		var reader = new FileReader();
+		if(file1 == null)
+			return;
 		reader.onload = function (e) {
 				var textArea = document.getElementById("message");
 				textArea.value = e.target.result;							
-		};
-		
-		reader.readAsText(file);	
+		};		
+		reader.readAsText(file1);
+
+
+		var file2 = document.getElementById("files2").files[0];
+		if(file2 == null)
+			return;
+		var reader = new FileReader();
+		reader.onload = function (e) {
+				var textArea = document.getElementById("key");
+				textArea.value = e.target.result;							
+		};		
+		reader.readAsText(file2);	
 		
 	}
 
 
 	function encriptar(){
-		myFunction();
 
-		_message = $('#message').val();  
-		_size = $('#input_number').val();		
-
-		if (_message.length<=0 || _size<=0 ){
-			alert("INGRESE TAMAÑO DE REJILLA Y/O ARCHIVO!");
-			return
+		var _message = $('#message').val();  
+		var _size = $('#input_number').val();
+		
+		if (_message == null || _message.length<=0 ||  _message==" " ){
+			alert("CARGE ARCHIVO DEL MENSAJE");
+			return;
 		}
+
+		if (  _size==null ||  _size<=1 ){
+			alert("TAMAÑO DE CLAVE NO VALIDA!");
+			return;
+		}		
 
 		var dict = null;
 		var rotations = null;
@@ -127,30 +141,38 @@
 			type: 'GET',
 			success: function(data) {
 
-				 $('table').remove();
-				 $('h3').remove();
+				$('table').remove();
+				$('h3').remove();
+				$('h4').remove();
 
-					dict = JSON.parse(data);
+				dict = JSON.parse(data);
+				if ("error" in dict){
+					alert(dict['error'])
+					$('#message2').val("");					
+				}
+				else{
 				   table = dict['table'];
 				   keys =  dict['keys']; 
 				   ciphers = dict['ciphers'];
 				   cipher = dict['cipher']; 
 
-					displayTable(table, _size, "here_table" );
+					displayTable(table, _size, "here_table","ENCRIPTADO" );
 					
 					KEY = keys['rotate0'];
 					TABLE = dict['table'];
 					SIZE = _size;
 
-					displayTableWithKey(table, _size, keys['rotate0'] , "rotate0");
-					displayTableWithKey(table, _size, keys['rotate1'] , "rotate1");
-					displayTableWithKey(table, _size, keys['rotate2'] , "rotate2");
-					displayTableWithKey(table, _size, keys['rotate3'] , "rotate3");
-
-					 
+					displayTableWithKey(table, _size, keys['rotate0'] , "rotate0",ciphers);
+					displayTableWithKey(table, _size, keys['rotate1'] , "rotate1",ciphers);
+					displayTableWithKey(table, _size, keys['rotate2'] , "rotate2",ciphers);
+					displayTableWithKey(table, _size, keys['rotate3'] , "rotate3",ciphers);					 
 
 					$('#message').val(dict['preproc']);
 					$('#message2').val(cipher);
+					downloads("cipher");
+					
+					
+				}
 			},
 			failure: function(data) { 
 					alert('Got an error dude');
@@ -160,7 +182,7 @@
 
 
 
-	function displayTableWithKey(_table,_size,_key,_elem){
+	function displayTableWithKey(_table,_size,_key,_elem,_ciphers){
 			 
 		var content = "<h3 style='font-weight:bold;'> "+ "Rotacion"+ _elem.substr(6,1) +"</h3>";
 		content += "<table class='table table-condensed table-hover table-striped'>";
@@ -179,12 +201,13 @@
 		}
 
 		content += "</table>";
+		content += "<h4> Mensaje parcial: " + _ciphers[_elem] + " </h4>";
 		$('#'+_elem).append(content);
 	}		
 
-	function displayTable(_table,_size,_elem){
+	function displayTable(_table,_size,_elem, _title){
 
-		var content = "<h3 style='font-weight:bold;' > ENCRIPTADO </h3> ";
+		var content = "<h3 style='font-weight:bold;' > "+ _title +" </h3> ";
 			 
 		content += "<table >";
 		for(i=0; i<_size; i++){
@@ -222,44 +245,94 @@
 		}
 
 		content += "</table>";
+		content += "<h4> Mensaje parcial: " + _message + " </h4>";
 		$('#'+_elem).append(content);
 	}
 
+	function downloads(_key){
+
+		var _urls_down =  {
+			'descipher': "{% url 'cifrado:down_descipher'  %}" ,
+			'key': "{% url 'cifrado:down_key'  %}",
+			'cipher': "{% url 'cifrado:down_cipher'  %}",
+		};
+
+		if (!(_key in  _urls_down)){
+			return;
+		}
+
+		$.ajax({
+			url: _urls_down[_key],     
+			data: {},
+			type: 'GET',
+			success: function(data) {
+
+				window.location =  _urls_down[_key];	
+			},
+			failure: function(data) { 
+					alert('Ocurrio un Error!');
+			}
+		}); 
+
+	}
+
 	function desencriptar(){
+
+		_message = $('#message').val();  
+		_key = $('#key').val();
+
+		
+		if (_message.length<=0 ||  _message==" " ){
+			alert("CARGE ARCHIVO DEL MENSAJE");
+			return;
+		}
+
+		if (_key.length<=0 ||  _key==" " ){
+			alert("CARGE ARCHIVO DE LA CLAVE !");
+			return;
+		}
+
 		$.ajax({
 			url: "{% url 'cifrado:descipher'  %}",     
 			data: {
-					'key': JSON.stringify(KEY),
-					'table': JSON.stringify(TABLE),
-					'size': SIZE,  
-			},
+					'message': _message,
+					'key': _key,
+				},
 			type: 'GET',
 			success: function(data) {
 				$('table').remove();
 				$('h3').remove();
+				$('h4').remove();
 				dict = JSON.parse(data);
 
+				if ("error" in dict){
+					alert(dict['error'])
+					$('#message2').val("");					
+				}
+				else{
 								
-				tabs = dict['tabs'];
+					tabs = dict['tabs'];
+					size = dict['size'] ;
+					message = dict['message'];
+				   table = dict['table'] ;
+				   keys = dict['keys'];
+				   desciphers = dict['desciphers'];
+				   descipher = dict['descipher'];
+				   displayTable(table,size,"here_table","DESENCRIPTADO" );
 
-				message = dict['message'];
-			   table = dict['table'] ;
-			   keys = dict['keys'];
-			   desciphers = dict['desciphers'];
-			   descipher = dict['descipher'];
-			   displayTable(table,SIZE,"here_table" );
+					displayTableDes(desciphers['rotate0'], size, "rotate0", keys['rotate0']);
+					displayTableDes(desciphers['rotate1'], size, "rotate1", keys['rotate1']);			
+					displayTableDes(desciphers['rotate2'], size, "rotate2", keys['rotate2']);
+					displayTableDes(desciphers['rotate3'], size, "rotate3", keys['rotate3']);				  
 
-				displayTableDes(desciphers['rotate0'], SIZE, "rotate0", keys['rotate0']);
-				displayTableDes(desciphers['rotate1'], SIZE, "rotate1", keys['rotate1']);			
-				displayTableDes(desciphers['rotate2'], SIZE, "rotate2", keys['rotate2']);
-				displayTableDes(desciphers['rotate3'], SIZE, "rotate3", keys['rotate3']);				  
-
-				$('#message2').val("");
-				$('#message2').val(descipher);
+					$('#message2').val("");
+					$('#message2').val(descipher);
+					downloads("descipher");
+				}
 				
 			},
 			failure: function(data) { 
-					alert('Got an error dude');
+					alert('Ocurrio un Error!');
 			}
 		}); 
 	}	
@@ -278,20 +351,27 @@
 				<button type="button" class="btn btn-primary"  id="btn" onclick="myFunction()" >Cargar File</button>
 				<button type="button" class="btn btn-success"  id="btn_enc" onclick="encriptar()" >Encriptar</button>    
 				<button type="button" class="btn btn-info"  id="btn_des" onclick="desencriptar()" >Desencriptar</button>
+
+				<button type="button" class="btn btn-danger"  id="btn_down" onclick="downloads('key')" >Download Key</button>
 				</span>
 			</div>
 			<br>
 
 			<div >
 				<div>
-					<input type="file" id="files"/>	
+					<span> <label> Mensaje: </label><input type="file" id="files1"/>				</span>	
 				</div>
+				<div  style="margin:5px 0px;">	
+					<span> <label> Clave: </label> <input type="file" id="files2"/></span>
+				</div>
+				<br>
 				<div style="float:left;" >	
-					<label> Mensaje a Encriptar: </label><br>
+					<label> Mensaje: </label><br>
 					<textarea readonly id="message"> </textarea> <br>
+					<textarea  id="key"  style="display:none;"> </textarea> <br>
 				</div>
 				<div style="margin:0px 0px 0px 20px;">	
-					<label> Mensaje Desencriptado: </label><br>
+					<label> Mensaje Encriptado/Desencriptado: </label><br>
 					<textarea readonly id="message2"> </textarea> <br>
 				</div>
 				
@@ -306,11 +386,10 @@
 		<div class="_divtab"   id="rotate0">
 		</div>
 
-		<div   class="_divtab" id="rotate1">
+		<div class="_divtab" id="rotate1">
 		</div>
 
-		<div   class="_divtab"  id="rotate2">
-
+		<div class="_divtab"  id="rotate2">
 		</div>
 
 		<div  class="_divtab"  id="rotate3">
