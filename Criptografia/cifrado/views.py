@@ -18,6 +18,7 @@ _susti =  {'ñ':'n', 'Ñ':'N'}
 def preprocess(_message):
     _mes = str(_message).replace(' ','')
     _mes = _mes.replace('\t','')
+    _mes = _mes.replace("\n","")
     _mes = _mes.upper()
     _mes = re.findall("[A-Z0-9]",_mes)
     _string = ''
@@ -122,6 +123,7 @@ def encrypt(_message, _key, _size):
     _cipher = ''
     _tmpKey = [[_key[_k][0], _key[_k][1]] for _k in _key]
     _keyOrd = sorted(_tmpKey, key = lambda x: (x[0], x[1]))
+    
 
     for i in range(_size):
         for j in range(_size):
@@ -131,7 +133,7 @@ def encrypt(_message, _key, _size):
             else:
                 _let = 65
                 _inc = int(random() * (26))
-                _table[i][j] = chr(_let+_inc)    
+                _table[i][j] = chr(_let+_inc)
     
     _newKey = _key
     _keys = {}
@@ -153,6 +155,23 @@ def encrypt(_message, _key, _size):
    
     return _cipher, _ciphers, _keys, _table
 
+
+def getAlphabet(base):
+    _alphabet = {}
+    pos_n = 0
+    for i in range (26):
+        k = i + base
+        if not pos_n:            
+            _alphabet[chr(k)] = [k,chr(k)]
+            if chr(k) == 'N':
+                pos_n = k+1
+        else:
+            _alphabet[chr(k)] = [k+1,chr(k)]
+
+    _alphabet['Ñ'] = [pos_n,'Ñ']
+
+    return _alphabet
+
 def desencrypt(_message, _key, _size):   
     
     _desciphers = {}
@@ -162,6 +181,7 @@ def desencrypt(_message, _key, _size):
     _newKey = _key
     _table = [ [''] * _size for x in range(_size)]
     _index = 0
+    
 
     _tmpKey = [[_key[_k][0], _key[_k][1]] for _k in _key]
     _keyOrd = sorted(_tmpKey, key = lambda x: (x[0], x[1]))
@@ -220,7 +240,8 @@ def cipher(request):
     
     _size = request.GET.get('size')
     _message = request.GET.get('message')
-    _message = preprocess(_message) 
+    _message = preprocess(_message)
+    
     _result = {}
     _size = int(_size)
 
@@ -266,13 +287,33 @@ def readFile(name_file):
 
 def descipher(request):
     
-    _key= request.GET.get('key')
+    _key = request.GET.get('key')
     _message = request.GET.get('message')
+    _message = _message.replace("\n","")
+    _message = _message.replace("\t","")
+    _message = _message.replace('"',"")
     _size = 0
     _result = {}
+
+    _tmsm = ""
+    for i in range(len(_message)):
+        if ord(_message[i]) == 65533:
+            _tmsm += 'Ñ'
+        else:
+            _tmsm += _message[i]
+    _message = _tmsm
+
+    print(_message)
     try:
         _key = eval(_key)
-        _message = eval(_message)
+        temp = {}
+        if 'coodenadas' in _key.keys():
+            for pt in _key['coodenadas']:
+                k = str(pt['x'])+'-'+str(pt['y'])
+                temp[k] = [pt['x'], pt['y']]
+
+
+            _key = temp
         _size = len(_message)
         _size = int(math.sqrt(_size)) 
         print(_key)

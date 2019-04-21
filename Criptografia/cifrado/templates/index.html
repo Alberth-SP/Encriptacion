@@ -119,6 +119,7 @@
 
 		var _message = $('#message').val();  
 		var _size = $('#input_number').val();
+
 		
 		if (_message == null || _message.length<=0 ||  _message==" " ){
 			alert("CARGE ARCHIVO DEL MENSAJE");
@@ -278,8 +279,8 @@
 
 	function desencriptar(){
 
-		_message = $('#message').val();  
-		_key = $('#key').val();
+		var _message = $('#message').val();  
+		var _key = $('#key').val();	
 
 		
 		if (_message.length<=0 ||  _message==" " ){
